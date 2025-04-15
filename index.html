@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Click the Ball Game</title>
+  <style>
+    /* General Styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #74ebd5, #9face6);
+    }
+
+    /* Decorative Background */
+    #background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      animation: float 10s infinite;
+    }
+
+    .shape.square {
+      border-radius: 10px;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Title Screen */
+    #title-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    #title-screen h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    #start-button {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      background: #ff6f61;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s;
+    }
+
+    #start-button:hover {
+      transform: scale(1.05);
+    }
+
+    /* Game Container */
+    #game-container {
+      display: none; /* Hidden until the game starts */
+      position: relative;
+      width: 90%;
+      max-width: 400px;
+      height: 400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+      overflow: hidden;
+    }
+
+    /* Ball Styling */
+    #ball {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle at 30% 30%, #ff6f61, #de1a1a);
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    #ball:active {
+      transform: scale(1.1);
+    }
+
+    /* Info Panel */
+    #info-panel {
+      display: none; /* Hidden until the game starts */
+      font-size: 16px;
+      margin: 20px 0;
+    }
+
+    #info-panel span {
+      display: inline-block;
+      margin: 0 10px;
+    }
+
+    footer {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Decorations -->
+  <div id="background">
+    <!-- Adding shapes dynamically -->
+    <script>
+      const background = document.getElementById("background");
+      for (let i = 0; i < 30; i++) {
+        const shape = document.createElement("div");
+        shape.className = Math.random() > 0.5 ? "shape circle" : "shape square";
+        shape.style.width = shape.style.height = `${Math.random() * 50 + 20}px`;
+        shape.style.left = `${Math.random() * 100}vw`;
+        shape.style.animationDelay = `${Math.random() * 5}s`;
+        shape.style.animationDuration = `${Math.random() * 10 + 5}s`;
+        background.appendChild(shape);
+      }
+    </script>
+  </div>
+
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <h1>Ball Touching Scenarios</h1>
+    <button id="start-button">Start Touching BALLS?</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-container">
+    <div id="ball"></div>
+  </div>
+  <div id="info-panel">
+    <span id="score">Score: 0</span>
+    <span id="lives">Lives: 3</span>
+    <span id="accuracy">Accuracy: 0%</span>
+    <span id="time-taken">Time: 0.00s</span>
+    <span id="personal-best">Best: 0</span>
+  </div>
+  <footer>Made with ❤️ by Chinmay Singh Butola</footer>
+
+  <script>
+    const ball = document.getElementById("ball");
+    const scoreElement = document.getElementById("score");
+    const livesElement = document.getElementById("lives");
+    const accuracyElement = document.getElementById("accuracy");
+    const timeTakenElement = document.getElementById("time-taken");
+    const personalBestElement = document.getElementById("personal-best");
+    const titleScreen = document.getElementById("title-screen");
+    const startButton = document.getElementById("start-button");
+    const gameContainer = document.getElementById("game-container");
+    const infoPanel = document.getElementById("info-panel");
+
+    let score = 0;
+    let lives = 3;
+    let clicks = 0;
+    let hits = 0;
+    let startTime = performance.now();
+    let personalBest = 0;
+
+    // Start Game
+    startButton.addEventListener("click", () => {
+      titleScreen.style.display = "none";
+      gameContainer.style.display = "block";
+      infoPanel.style.display = "block";
+      resetGame();
+    });
+
+    function moveBall() {
+      const containerWidth = gameContainer.offsetWidth;
+      const containerHeight = gameContainer.offsetHeight;
+
+      const randomX = Math.floor(Math.random() * (containerWidth - ball.offsetWidth));
+      const randomY = Math.floor(Math.random() * (containerHeight - ball.offsetHeight));
+
+      ball.style.left = `${randomX}px`;
+      ball.style.top = `${randomY}px`;
+      startTime = performance.now(); // Reset timer
+    }
+
+    function updateStats() {
+      const accuracy = hits > 0 ? ((hits / clicks) * 100).toFixed(2) : 0;
+      accuracyElement.textContent = `Accuracy: ${accuracy}%`;
+      personalBestElement.textContent = `Best: ${personalBest}`;
+    }
+
+    ball.addEventListener("click", () => {
+      score++;
+      hits++;
+      clicks++;
+      const timeTaken = ((performance.now() - startTime) / 1000).toFixed(2);
+      timeTakenElement.textContent = `Time: ${timeTaken}s`;
+      scoreElement.textContent = `Score: ${score}`;
+      if (score > personalBest) personalBest = score;
+
+      updateStats();
+      moveBall();
+    });
+
+    // Handle missed clicks
+    document.getElementById("game-container").addEventListener("click", (e) => {
+      if (e.target !== ball) {
+        lives--;
+        clicks++;
+        livesElement.textContent = `Lives: ${lives}`;
+        updateStats();
+
+        if (lives === 0) {
+          alert(`Game Over! Your final score is ${score}.`);
+          resetGame();
+        }
+      }
+    });
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      clicks = 0;
+      hits = 0;
+
+      scoreElement.textContent = `Score: ${score}`;
+      livesElement.textContent = `Lives: ${lives}`;
+      timeTakenElement.textContent = `Time: 0.00s`;
+      updateStats();
+      moveBall();
+    }
+
+    // Initial setup
+    moveBall();
+  </script>
+</body>
+</html>
